@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ロト6 被りにくい番号メーカー</title>
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --card: #FFFFFF;
+    --ink: #1E2A22;
+    --muted: #6B7568;
+    --line: #E3E0D6;
+    --accent: #1B7A4A;
+    --accent-ink: #FFFFFF;
+    --gold: #C9A227;
+    --gold-soft: #F5EDD4;
+    --chip-bg: #EDF4EF;
+    --shadow: 0 2px 8px rgba(30, 42, 34, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141815;
+      --card: #1C231E;
+      --ink: #E8ECE6;
+      --muted: #9BA697;
+      --line: #2E3830;
+      --accent: #2E9C64;
+      --accent-ink: #FFFFFF;
+      --gold: #D8B84A;
+      --gold-soft: #2E2A1A;
+      --chip-bg: #24312A;
+      --shadow: 0 2px 8px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F5F0;
+    --card: #FFFFFF;
+    --ink: #1E2A22;
+    --muted: #6B7568;
+    --line: #E3E0D6;
+    --accent: #1B7A4A;
+    --accent-ink: #FFFFFF;
+    --gold: #C9A227;
+    --gold-soft: #F5EDD4;
+    --chip-bg: #EDF4EF;
+    --shadow: 0 2px 8px rgba(30, 42, 34, .08);
+  }
+  :root[data-theme="dark"] {
+    --bg: #141815;
+    --card: #1C231E;
+    --ink: #E8ECE6;
+    --muted: #9BA697;
+    --line: #2E3830;
+    --accent: #2E9C64;
+    --accent-ink: #FFFFFF;
+    --gold: #D8B84A;
+    --gold-soft: #2E2A1A;
+    --chip-bg: #24312A;
+    --shadow: 0 2px 8px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", Meiryo, sans-serif;
+    font-size: 18px;
+    line-height: 1.7;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 14px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header { text-align: center; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 999px;
+    padding: 3px 14px;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: 26px;
+    line-height: 1.4;
+    margin: 0 0 6px;
+    text-wrap: balance;
+    font-weight: 800;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* 枚数ステッパー */
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .stepper button {
+    width: 56px;
+    height: 56px;
+    font-size: 30px;
+    font-weight: 700;
+    border-radius: 16px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .stepper button:active { transform: scale(.96); }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper .count {
+    min-width: 130px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .stepper .count small {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* 生成ボタン */
+  .go {
+    width: 100%;
+    min-height: 68px;
+    font-size: 22px;
+    font-weight: 800;
+    font-family: inherit;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    letter-spacing: .04em;
+  }
+  .go:active { transform: scale(.98); }
+
+  /* マークシート1枚 = A〜E の5口 */
+  .sheets { display: flex; flex-direction: column; gap: 14px; }
+  .sheet-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 14px 12px 12px;
+  }
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .sheet-label {
+    font-size: 17px;
+    font-weight: 800;
+    background: var(--chip-bg);
+    color: var(--accent);
+    border-radius: 8px;
+    padding: 2px 14px;
+  }
+  .rarity {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--gold);
+    background: var(--gold-soft);
+    border-radius: 999px;
+    padding: 2px 12px;
+    white-space: nowrap;
+  }
+  .rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .row { display: flex; align-items: center; gap: 6px; }
+  .row-label {
+    width: 24px;
+    flex: none;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--muted);
+  }
+  .balls { display: flex; flex: 1; justify-content: space-between; gap: 5px; }
+  .ball {
+    flex: 1;
+    aspect-ratio: 1;
+    max-width: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,.22), inset 0 3px 5px rgba(255,255,255,.28);
+  }
+  .d0 { background: #C94F3D; }  /* 1–9 朱 */
+  .d1 { background: #B8860B; }  /* 10–19 金茶 */
+  .d2 { background: #1B7A4A; }  /* 20–29 緑 */
+  .d3 { background: #2E5FA3; }  /* 30–39 青 */
+  .d4 { background: #6E4B9E; }  /* 40–43 紫 */
+
+  .copy-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .copy-btn:active { transform: scale(.98); }
+
+  .copy-all {
+    width: 100%;
+    min-height: 56px;
+    font-size: 18px;
+    font-weight: 800;
+    font-family: inherit;
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* 説明 */
+  details {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 0 16px;
+  }
+  summary {
+    font-size: 17px;
+    font-weight: 800;
+    padding: 16px 0;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "＋"; font-size: 20px; color: var(--muted); }
+  details[open] summary::after { content: "－"; }
+  .explain { padding: 0 0 18px; font-size: 15.5px; color: var(--ink); }
+  .explain p { margin: 0 0 12px; }
+  .explain strong { color: var(--accent); }
+  .explain .honest {
+    background: var(--gold-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14.5px;
+  }
+
+  .note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* 出現回数ランキング */
+  .freq-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .freq-rank {
+    width: 42px;
+    flex: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .freq-ball {
+    width: 36px;
+    height: 36px;
+    flex: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,.22), inset 0 2px 3px rgba(255,255,255,.28);
+  }
+  .freq-bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: var(--chip-bg);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .freq-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+  }
+  .freq-count {
+    width: 52px;
+    flex: none;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* トースト */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #toast { transition: none; }
+  }
+  button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">キャリーオーバー狙い</span>
+    <h1>ロト6<br>被りにくい番号メーカー</h1>
+    <p class="subtitle">みんなが選ばない組み合わせで、当たったら独り占め</p>
+  </header>
+
+  <div class="stepper" aria-label="枚数の選択">
+    <button type="button" id="minus" aria-label="枚数を減らす">−</button>
+    <div class="count">
+      <span id="mai">10</span> 枚
+      <small id="maiDetail">50口・合計 10,000円</small>
+    </div>
+    <button type="button" id="plus" aria-label="枚数を増やす">＋</button>
+  </div>
+
+  <button type="button" class="go" id="go">番号をつくる</button>
+
+  <div class="sheets" id="sheets" aria-live="polite"></div>
+
+  <button type="button" class="copy-all" id="copyAll" hidden>ぜんぶまとめてコピー</button>
+
+  <details>
+    <summary>なぜこの数字が出るの？</summary>
+    <div class="explain">
+      <p><strong>全部の口がダブりなし。</strong>1枚目のA口から最後のE口まで、同じ組み合わせは一つもありません。当せん番号をもれなく網にかけられます。</p>
+      <p><strong>誕生日の数字（1〜31）は大人気。</strong>家族の誕生日で買う人がとても多いので、32〜43が多めに出るようにしています。</p>
+      <p><strong>縁起の良い 7 や 3・8 も大人気。</strong>逆に 4・9・42 などの「忌み数」は避ける人が多いので、狙い目として出やすくしています。</p>
+      <p><strong>連続した数字（例：15・16）は不人気。</strong>「連番なんて出ないだろう」と皆が避けるので、あえて混ぜています。実際には連番もよく出ます。</p>
+      <p><strong>きれいな並び（等差数列・同じ下一桁）は除外。</strong>パターンで選ぶ人と被りやすいためです。</p>
+      <p class="honest">正直な注意：どの組み合わせも<strong>当たる確率は同じ</strong>です。この道具が変えるのは「当たったときに他の人と山分けになりにくい」こと、つまり<strong>当たったときの取り分</strong>です。キャリーオーバー中ほど効果が大きくなります。買いすぎにはご注意を。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>数字ごとの出現回数</summary>
+    <div class="explain">
+      <p>第1回（2000年10月）から<strong id="freqUpto">第2,118回（2026年7月9日）</strong>までの本数字を全部数えました。よく出た順に並んでいます。</p>
+      <div id="freqList"></div>
+      <p class="honest">正直な注意：この差は<strong>サイコロのばらつきと同じ「偶然のゆらぎ」</strong>で、どの数字も次に出る確率はまったく同じです。「へえ、こうなってるのか」という観察としてお楽しみください。</p>
+    </div>
+  </details>
+
+  <p class="note">マークシート1枚＝A〜Eの5口・毎回ちがう組み合わせが出ます</p>
+</div>
+
+<div id="toast" role="status">コピーしました</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- 人気度スコア：高いほど「他人と被りやすい」 ---- */
+
+  function numberPopularity(n) {
+    var s = 0;
+    if (n >= 1 && n <= 12) s += 3;        // 月にも日にも使える
+    else if (n <= 31) s += 2;             // 日として使える
+    if (n === 7) s += 3;                  // ラッキーセブン
+    if (n === 3 || n === 8) s += 1.5;     // 縁起の良い数
+    if (n % 10 === 7 && n !== 7) s += 1;  // 17, 27, 37
+    if (n <= 3) s += 1;                   // 小さい数の好み
+    var imi = [4, 9, 14, 19, 24, 29, 34, 39, 42]; // 忌み数は避けられる＝被りにくい
+    if (imi.indexOf(n) !== -1) s -= 2;
+    if (n === 43) s -= 0.5;               // 端の数はやや不人気
+    return s;
+  }
+
+  function comboPopularity(nums) {
+    var s = 0, i;
+    for (i = 0; i < nums.length; i++) s += numberPopularity(nums[i]);
+
+    var maxRun = 1, run = 1, pairs = 0;
+    for (i = 1; i < nums.length; i++) {
+      if (nums[i] === nums[i - 1] + 1) {
+        pairs++;
+        run++;
+        if (run > maxRun) maxRun = run;
+      } else {
+        run = 1;
+      }
+    }
+    s -= pairs * 1.5;                     // 連番は皆が避ける＝被りにくい
+    if (maxRun >= 3) s -= 2;
+
+    var all31 = nums.every(function (n) { return n <= 31; });
+    if (all31) s += 4;                    // 全部誕生日圏＝大人気ゾーン
+
+    var diffs = [], ap = true;
+    for (i = 1; i < nums.length; i++) diffs.push(nums[i] - nums[i - 1]);
+    for (i = 1; i < diffs.length; i++) if (diffs[i] !== diffs[0]) { ap = false; break; }
+    if (ap) s += 6;                       // 等差数列（7,14,21…）はパターン買いと被る
+
+    var lastDigits = {};
+    nums.forEach(function (n) {
+      var d = n % 10;
+      lastDigits[d] = (lastDigits[d] || 0) + 1;
+    });
+    for (var k in lastDigits) if (lastDigits[k] >= 3) s += 2; // 下一桁そろえ
+
+    // マークシートで各10番台に1個ずつ均等に散らすのも定番の買い方
+    var decades = {};
+    nums.forEach(function (n) { decades[Math.floor(n / 10)] = true; });
+    if (Object.keys(decades).length === nums.length) s += 1.5;
+
+    return s;
+  }
+
+  function randomCombo() {
+    var pool = [], i;
+    for (i = 1; i <= 43; i++) pool.push(i);
+    for (i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    return pool.slice(0, 6).sort(function (a, b) { return a - b; });
+  }
+
+  /* 50口でも必ずダブりなしで返す */
+  function generate(count) {
+    var CANDIDATES = 6000;
+    var list = [], seenCombo = {}, i;
+    for (i = 0; i < CANDIDATES; i++) {
+      var c = randomCombo();
+      var ck = c.join(",");
+      if (seenCombo[ck]) continue;        // 候補の時点で重複を除く
+      seenCombo[ck] = true;
+      list.push({ nums: c, score: comboPopularity(c) });
+    }
+    list.sort(function (a, b) { return a.score - b.score; });
+
+    // 下位15%（＝最も被りにくい層）からランダムに選ぶ：毎回違う結果に
+    var eliteSize = Math.max(count * 4, Math.floor(list.length * 0.15));
+    if (eliteSize > list.length) eliteSize = list.length;
+    var picked = [], used = {};
+    var guard = 0;
+    while (picked.length < count && guard < 100000) {
+      guard++;
+      var idx = Math.floor(Math.random() * eliteSize);
+      var key = list[idx].nums.join(",");
+      if (!used[key]) {
+        used[key] = true;
+        picked.push({ nums: list[idx].nums, pct: idx / list.length });
+      }
+    }
+    return picked;
+  }
+
+  /* ---- 表示 ---- */
+
+  var ROW_LABELS = ["A", "B", "C", "D", "E"];
+
+  function rarityStars(pct) {
+    // 候補全体の中での順位（上位ほど被りにくい）
+    if (pct <= 0.02) return "★★★★★";
+    if (pct <= 0.06) return "★★★★";
+    return "★★★";
+  }
+
+  function ballClass(n) { return "d" + Math.min(4, Math.floor(n / 10)); }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  var sheetsEl = document.getElementById("sheets");
+  var copyAllBtn = document.getElementById("copyAll");
+  var currentSheets = [];
+
+  function chunkIntoSheets(picked) {
+    var sheets = [];
+    for (var i = 0; i < picked.length; i += 5) {
+      sheets.push(picked.slice(i, i + 5));
+    }
+    return sheets;
+  }
+
+  function sheetText(rows, sheetNo) {
+    var lines = ["【" + sheetNo + "枚目】"];
+    rows.forEach(function (p, i) {
+      lines.push(ROW_LABELS[i] + ": " + p.nums.map(pad).join(" "));
+    });
+    return lines.join("\n");
+  }
+
+  function render(picked) {
+    currentSheets = chunkIntoSheets(picked);
+    sheetsEl.innerHTML = "";
+
+    currentSheets.forEach(function (rows, s) {
+      var card = document.createElement("div");
+      card.className = "sheet-card";
+
+      var head = document.createElement("div");
+      head.className = "sheet-head";
+      var label = document.createElement("span");
+      label.className = "sheet-label";
+      label.textContent = (s + 1) + " 枚目";
+      var avgPct = rows.reduce(function (a, p) { return a + p.pct; }, 0) / rows.length;
+      var rar = document.createElement("span");
+      rar.className = "rarity";
+      rar.textContent = "被りにくさ " + rarityStars(avgPct);
+      head.appendChild(label);
+      head.appendChild(rar);
+
+      var rowsEl = document.createElement("div");
+      rowsEl.className = "rows";
+      rows.forEach(function (p, i) {
+        var row = document.createElement("div");
+        row.className = "row";
+        var rl = document.createElement("span");
+        rl.className = "row-label";
+        rl.textContent = ROW_LABELS[i];
+        var balls = document.createElement("div");
+        balls.className = "balls";
+        p.nums.forEach(function (n) {
+          var b = document.createElement("div");
+          b.className = "ball " + ballClass(n);
+          b.textContent = pad(n);
+          balls.appendChild(b);
+        });
+        row.appendChild(rl);
+        row.appendChild(balls);
+        rowsEl.appendChild(row);
+      });
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "copy-btn";
+      btn.textContent = "この枚をコピー";
+      btn.addEventListener("click", function () {
+        copyText(sheetText(rows, s + 1));
+      });
+
+      card.appendChild(head);
+      card.appendChild(rowsEl);
+      card.appendChild(btn);
+      sheetsEl.appendChild(card);
+    });
+
+    copyAllBtn.hidden = currentSheets.length === 0;
+  }
+
+  /* ---- コピー ---- */
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+
+  function copyText(text) {
+    function done() { showToast("コピーしました"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text); done(); });
+    } else {
+      legacyCopy(text);
+      done();
+    }
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  copyAllBtn.addEventListener("click", function () {
+    var parts = currentSheets.map(function (rows, s) {
+      return sheetText(rows, s + 1);
+    });
+    copyText(parts.join("\n\n"));
+  });
+
+  /* ---- 枚数ステッパー ---- */
+
+  var mai = 10;
+  var maiEl = document.getElementById("mai");
+  var maiDetail = document.getElementById("maiDetail");
+  var minus = document.getElementById("minus");
+  var plus = document.getElementById("plus");
+
+  function syncStepper() {
+    maiEl.textContent = mai;
+    var kuchi = mai * 5;
+    var yen = kuchi * 200;
+    maiDetail.textContent = kuchi + "口・合計 " + yen.toLocaleString("ja-JP") + "円";
+    minus.disabled = mai <= 1;
+    plus.disabled = mai >= 10;
+  }
+  minus.addEventListener("click", function () { if (mai > 1) { mai--; syncStepper(); } });
+  plus.addEventListener("click", function () { if (mai < 10) { mai++; syncStepper(); } });
+  syncStepper();
+
+  document.getElementById("go").addEventListener("click", function () {
+    render(generate(mai * 5));
+  });
+
+  /* ---- 出現回数ランキング（第1回〜第2118回・2026/7/9集計） ---- */
+
+  // 内蔵データ（freq.json が読み込めない環境での予備）：第2118回・2026/7/9 時点
+  var FREQ = {"1":295,"2":315,"3":288,"4":288,"5":303,"6":327,"7":273,"8":296,"9":258,"10":306,"11":282,"12":289,"13":275,"14":285,"15":305,"16":297,"17":274,"18":301,"19":309,"20":295,"21":313,"22":297,"23":293,"24":307,"25":289,"26":309,"27":308,"28":298,"29":278,"30":295,"31":285,"32":297,"33":282,"34":279,"35":308,"36":305,"37":317,"38":311,"39":295,"40":283,"41":278,"42":317,"43":303};
+
+  function renderFreqList(freqMap) {
+    var listEl = document.getElementById("freqList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    var entries = [];
+    for (var n = 1; n <= 43; n++) entries.push({ n: n, c: freqMap[String(n)] || 0 });
+    entries.sort(function (a, b) { return b.c - a.c || a.n - b.n; });
+    var maxC = entries[0].c || 1;
+    var rank = 0, prevC = -1;
+    entries.forEach(function (e, i) {
+      if (e.c !== prevC) { rank = i + 1; prevC = e.c; }
+      var row = document.createElement("div");
+      row.className = "freq-row";
+
+      var rk = document.createElement("span");
+      rk.className = "freq-rank";
+      rk.textContent = rank + "位";
+
+      var ball = document.createElement("span");
+      ball.className = "freq-ball " + ballClass(e.n);
+      ball.textContent = pad(e.n);
+
+      var barWrap = document.createElement("div");
+      barWrap.className = "freq-bar-wrap";
+      var bar = document.createElement("div");
+      bar.className = "freq-bar";
+      bar.style.width = Math.round(e.c / maxC * 100) + "%";
+      barWrap.appendChild(bar);
+
+      var cnt = document.createElement("span");
+      cnt.className = "freq-count";
+      cnt.textContent = e.c + "回";
+
+      row.appendChild(rk);
+      row.appendChild(ball);
+      row.appendChild(barWrap);
+      row.appendChild(cnt);
+      listEl.appendChild(row);
+    });
+  }
+
+  renderFreqList(FREQ);
+
+  // 同じ場所に置かれた freq.json（自動更新される最新集計）があればそちらを優先
+  try {
+    fetch("freq.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.freq) return;
+        renderFreqList(d.freq);
+        var upto = document.getElementById("freqUpto");
+        if (upto && d.lastDraw && d.lastDate) {
+          var p = String(d.lastDate).split("/");
+          var dateJa = p.length === 3 ? p[0] + "年" + Number(p[1]) + "月" + Number(p[2]) + "日" : d.lastDate;
+          upto.textContent = "第" + Number(d.lastDraw).toLocaleString("ja-JP") + "回（" + dateJa + "）";
+        }
+      })
+      .catch(function () { /* 読み込めなければ内蔵データのまま */ });
+  } catch (e) { /* fetch非対応環境でも内蔵データで動く */ }
+
+  // 初回表示でいきなり出す：説明を読まなくても使い方が伝わる
+  render(generate(mai * 5));
+})();
+</script>
+
+</html>
