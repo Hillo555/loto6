@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 作業用ファイル（集計の元データはリポジトリに含めない）
+loto6.csv

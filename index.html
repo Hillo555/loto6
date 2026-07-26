@@ -139,6 +139,50 @@
     line-height: 1.5;
   }
 
+  /* 作戦（モード）切替 */
+  .modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .mode-btn {
+    min-height: 72px;
+    padding: 8px 4px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--ink);
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .mode-btn small {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .mode-btn[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .mode-btn[aria-pressed="true"] small { color: var(--accent-ink); opacity: .85; }
+  .mode-btn:active { transform: scale(.97); }
+
+  .mode-desc {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    margin: -8px 0 0;
+  }
+
   /* 生成ボタン */
   .go {
     width: 100%;
@@ -362,9 +406,22 @@
 <div class="wrap">
   <header>
     <span class="eyebrow">キャリーオーバー狙い</span>
-    <h1>ロト6<br>被りにくい番号メーカー</h1>
-    <p class="subtitle">みんなが選ばない組み合わせで、当たったら独り占め</p>
+    <h1>ロト6<br>番号メーカー</h1>
+    <p class="subtitle">作戦を選んで、番号をつくる</p>
   </header>
+
+  <div class="modes" role="group" aria-label="作戦の選択">
+    <button type="button" class="mode-btn" id="modeFreq" data-mode="freq" aria-pressed="true">
+      出やすい<small>よく出た数字</small>
+    </button>
+    <button type="button" class="mode-btn" id="modeBoth" data-mode="both" aria-pressed="false">
+      両取り<small>おすすめ</small>
+    </button>
+    <button type="button" class="mode-btn" id="modeRare" data-mode="rare" aria-pressed="false">
+      被りにくい<small>取り分重視</small>
+    </button>
+  </div>
+  <p class="mode-desc" id="modeDesc"></p>
 
   <div class="stepper" aria-label="枚数の選択">
     <button type="button" id="minus" aria-label="枚数を減らす">−</button>
@@ -382,14 +439,13 @@
   <button type="button" class="copy-all" id="copyAll" hidden>ぜんぶまとめてコピー</button>
 
   <details>
-    <summary>なぜこの数字が出るの？</summary>
+    <summary>3つの作戦について</summary>
     <div class="explain">
-      <p><strong>全部の口がダブりなし。</strong>1枚目のA口から最後のE口まで、同じ組み合わせは一つもありません。当せん番号をもれなく網にかけられます。</p>
-      <p><strong>誕生日の数字（1〜31）は大人気。</strong>家族の誕生日で買う人がとても多いので、32〜43が多めに出るようにしています。</p>
-      <p><strong>縁起の良い 7 や 3・8 も大人気。</strong>逆に 4・9・42 などの「忌み数」は避ける人が多いので、狙い目として出やすくしています。</p>
-      <p><strong>連続した数字（例：15・16）は不人気。</strong>「連番なんて出ないだろう」と皆が避けるので、あえて混ぜています。実際には連番もよく出ます。</p>
-      <p><strong>きれいな並び（等差数列・同じ下一桁）は除外。</strong>パターンで選ぶ人と被りやすいためです。</p>
-      <p class="honest">正直な注意：どの組み合わせも<strong>当たる確率は同じ</strong>です。この道具が変えるのは「当たったときに他の人と山分けになりにくい」こと、つまり<strong>当たったときの取り分</strong>です。キャリーオーバー中ほど効果が大きくなります。買いすぎにはご注意を。</p>
+      <p><strong>「出やすい」＝これまでよく出た数字で組む。</strong>第1回からの全記録を数えて、出た回数の多い数字（6・37・42・2・21 など）を中心に組み立てます。</p>
+      <p><strong>「被りにくい」＝他の人が選ばない数字で組む。</strong>誕生日で使える 1〜31 やラッキーセブンは大人気なので減らし、4・9・42 などの忌み数や 32〜43、連番を多めにします。当たったとき山分けになりにくい組み方です。</p>
+      <p><strong>「両取り」＝その二つの良いとこ取り。</strong>よく出ていて、なおかつ他の人が選びにくい数字を優先します。迷ったらこれがおすすめです。</p>
+      <p><strong>どの作戦でも全部の口がダブりなし。</strong>1枚目のA口から最後のE口まで、同じ組み合わせは一つもありません。</p>
+      <p class="honest">正直な注意：<strong>「出やすい数字」でも次に当たる確率は上がりません。</strong>出た回数の差はサイコロと同じ偶然のゆらぎで、抽選機にクセはないからです。一方「被りにくい」組み方は、当たったときに<strong>他の人と山分けになりにくい＝取り分が増える</strong>という実際の効果があります。だから両方を欲張る「両取り」を用意しました。買いすぎにはご注意を。</p>
     </div>
   </details>
 
@@ -410,6 +466,19 @@
 <script>
 (function () {
   "use strict";
+
+  /* ---- 出現回数データ ----
+     内蔵分は freq.json が読めない環境での予備（第2118回・2026/7/9 時点）。
+     freq.json が読めたら差し替わり、以後の生成にも新しい数字が使われる。 */
+
+  var FREQ = {"1":295,"2":315,"3":288,"4":288,"5":303,"6":327,"7":273,"8":296,"9":258,"10":306,"11":282,"12":289,"13":275,"14":285,"15":305,"16":297,"17":274,"18":301,"19":309,"20":295,"21":313,"22":297,"23":293,"24":307,"25":289,"26":309,"27":308,"28":298,"29":278,"30":295,"31":285,"32":297,"33":282,"34":279,"35":308,"36":305,"37":317,"38":311,"39":295,"40":283,"41":278,"42":317,"43":303};
+
+  // 6個の合計出現回数：大きいほど「これまでよく出た数字」で固めた組み合わせ
+  function comboFrequency(nums) {
+    var s = 0;
+    for (var i = 0; i < nums.length; i++) s += (FREQ[String(nums[i])] || 0);
+    return s;
+  }
 
   /* ---- 人気度スコア：高いほど「他人と被りやすい」 ---- */
 
@@ -477,8 +546,9 @@
     return pool.slice(0, 6).sort(function (a, b) { return a - b; });
   }
 
-  /* 50口でも必ずダブりなしで返す */
-  function generate(count) {
+  /* 作戦に合う組み合わせを選ぶ。50口でも必ずダブりなしで返す。
+     mode: "freq"（出やすい）／"rare"（被りにくい）／"both"（両取り） */
+  function generate(count, mode) {
     var CANDIDATES = 6000;
     var list = [], seenCombo = {}, i;
     for (i = 0; i < CANDIDATES; i++) {
@@ -486,11 +556,25 @@
       var ck = c.join(",");
       if (seenCombo[ck]) continue;        // 候補の時点で重複を除く
       seenCombo[ck] = true;
-      list.push({ nums: c, score: comboPopularity(c) });
+      list.push({ nums: c, pop: comboPopularity(c), freq: comboFrequency(c) });
     }
-    list.sort(function (a, b) { return a.score - b.score; });
 
-    // 下位15%（＝最も被りにくい層）からランダムに選ぶ：毎回違う結果に
+    if (mode === "freq") {
+      // 出やすい順（合計出現回数の多い順）
+      list.sort(function (a, b) { return b.freq - a.freq; });
+    } else if (mode === "both") {
+      // 出やすさの順位と被りにくさの順位を足して、両方good なものを上位に
+      var byFreq = list.slice().sort(function (a, b) { return b.freq - a.freq; });
+      byFreq.forEach(function (e, idx) { e.rFreq = idx; });
+      var byPop = list.slice().sort(function (a, b) { return a.pop - b.pop; });
+      byPop.forEach(function (e, idx) { e.rPop = idx; });
+      list.sort(function (a, b) { return (a.rFreq + a.rPop) - (b.rFreq + b.rPop); });
+    } else {
+      // 被りにくい順（他人が選ばない順）
+      list.sort(function (a, b) { return a.pop - b.pop; });
+    }
+
+    // 上位15%（＝作戦に最も合う層）からランダムに選ぶ：毎回違う結果に
     var eliteSize = Math.max(count * 4, Math.floor(list.length * 0.15));
     if (eliteSize > list.length) eliteSize = list.length;
     var picked = [], used = {};
@@ -511,11 +595,22 @@
 
   var ROW_LABELS = ["A", "B", "C", "D", "E"];
 
-  function rarityStars(pct) {
-    // 候補全体の中での順位（上位ほど被りにくい）
-    if (pct <= 0.02) return "★★★★★";
-    if (pct <= 0.06) return "★★★★";
-    return "★★★";
+  var MODES = {
+    freq: { chip: "出やすさ",   desc: "これまでよく出た数字で組みます" },
+    both: { chip: "総合",       desc: "よく出て、なおかつ他の人が選ばない数字で組みます" },
+    rare: { chip: "被りにくさ", desc: "他の人が選ばない数字で組みます" }
+  };
+
+  var mode = "freq";       // ご希望により「出やすい」を初期設定に
+  var userActed = false;   // 一度でも操作したら、あとから勝手に作り直さない
+
+  // 5口の平均順位から星を出す。実際に出る値の四分位に合わせてあるので、
+  // 枚ごとに★の数がきちんと散らばる（いつも同じ★では目安にならないため）。
+  function ratingStars(pct) {
+    if (pct <= 0.055) return "★★★★★";
+    if (pct <= 0.075) return "★★★★";
+    if (pct <= 0.095) return "★★★";
+    return "★★";
   }
 
   function ballClass(n) { return "d" + Math.min(4, Math.floor(n / 10)); }
@@ -558,7 +653,7 @@
       var avgPct = rows.reduce(function (a, p) { return a + p.pct; }, 0) / rows.length;
       var rar = document.createElement("span");
       rar.className = "rarity";
-      rar.textContent = "被りにくさ " + rarityStars(avgPct);
+      rar.textContent = MODES[mode].chip + " " + ratingStars(avgPct);
       head.appendChild(label);
       head.appendChild(rar);
 
@@ -636,7 +731,29 @@
     var parts = currentSheets.map(function (rows, s) {
       return sheetText(rows, s + 1);
     });
-    copyText(parts.join("\n\n"));
+    // どの作戦で作った番号か、貼り付け先でも分かるようにしておく
+    copyText("［" + MODES[mode].chip + "重視］\n\n" + parts.join("\n\n"));
+  });
+
+  /* ---- 作戦（モード）切替 ---- */
+
+  var modeBtns = Array.prototype.slice.call(document.querySelectorAll(".mode-btn"));
+  var modeDesc = document.getElementById("modeDesc");
+
+  function setMode(next) {
+    mode = next;
+    modeBtns.forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-mode") === mode ? "true" : "false");
+    });
+    modeDesc.textContent = MODES[mode].desc;
+  }
+
+  modeBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      userActed = true;
+      setMode(b.getAttribute("data-mode"));
+      render(generate(mai * 5, mode));   // 選んだらすぐ作り直す
+    });
   });
 
   /* ---- 枚数ステッパー ---- */
@@ -655,18 +772,16 @@
     minus.disabled = mai <= 1;
     plus.disabled = mai >= 10;
   }
-  minus.addEventListener("click", function () { if (mai > 1) { mai--; syncStepper(); } });
-  plus.addEventListener("click", function () { if (mai < 10) { mai++; syncStepper(); } });
+  minus.addEventListener("click", function () { if (mai > 1) { userActed = true; mai--; syncStepper(); } });
+  plus.addEventListener("click", function () { if (mai < 10) { userActed = true; mai++; syncStepper(); } });
   syncStepper();
 
   document.getElementById("go").addEventListener("click", function () {
-    render(generate(mai * 5));
+    userActed = true;
+    render(generate(mai * 5, mode));
   });
 
-  /* ---- 出現回数ランキング（第1回〜第2118回・2026/7/9集計） ---- */
-
-  // 内蔵データ（freq.json が読み込めない環境での予備）：第2118回・2026/7/9 時点
-  var FREQ = {"1":295,"2":315,"3":288,"4":288,"5":303,"6":327,"7":273,"8":296,"9":258,"10":306,"11":282,"12":289,"13":275,"14":285,"15":305,"16":297,"17":274,"18":301,"19":309,"20":295,"21":313,"22":297,"23":293,"24":307,"25":289,"26":309,"27":308,"28":298,"29":278,"30":295,"31":285,"32":297,"33":282,"34":279,"35":308,"36":305,"37":317,"38":311,"39":295,"40":283,"41":278,"42":317,"43":303};
+  /* ---- 出現回数ランキングの表示 ---- */
 
   function renderFreqList(freqMap) {
     var listEl = document.getElementById("freqList");
@@ -717,19 +832,23 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.freq) return;
-        renderFreqList(d.freq);
+        FREQ = d.freq;                 // 以後の番号づくりにも最新の回数を使う
+        renderFreqList(FREQ);
         var upto = document.getElementById("freqUpto");
         if (upto && d.lastDraw && d.lastDate) {
           var p = String(d.lastDate).split("/");
           var dateJa = p.length === 3 ? p[0] + "年" + Number(p[1]) + "月" + Number(p[2]) + "日" : d.lastDate;
           upto.textContent = "第" + Number(d.lastDraw).toLocaleString("ja-JP") + "回（" + dateJa + "）";
         }
+        // まだ何も操作していないうちだけ、最新データで静かに作り直す
+        if (!userActed) render(generate(mai * 5, mode));
       })
       .catch(function () { /* 読み込めなければ内蔵データのまま */ });
   } catch (e) { /* fetch非対応環境でも内蔵データで動く */ }
 
   // 初回表示でいきなり出す：説明を読まなくても使い方が伝わる
-  render(generate(mai * 5));
+  setMode(mode);
+  render(generate(mai * 5, mode));
 })();
 </script>
 
