@@ -12,6 +12,7 @@ import urllib.request
 
 CSV_URL = "https://loto6.thekyo.jp/data/loto6.csv"
 OUT_PATH = "freq.json"
+RECENT_N = 10          # 「直近◯回」作戦で見る抽選回数
 
 
 def main():
@@ -22,8 +23,7 @@ def main():
 
     freq = {str(n): 0 for n in range(1, 44)}
     draws = 0
-    last_draw = 0
-    last_date = ""
+    records = []          # (開催回, 日付, 本数字6個) を回順に貯める
 
     reader = csv.reader(io.StringIO(text))
     next(reader)  # ヘッダー行
@@ -40,24 +40,37 @@ def main():
         draws += 1
         for n in nums:
             freq[str(n)] += 1
-        if int(row[0]) > last_draw:
-            last_draw = int(row[0])
-            last_date = row[1].strip()
+        records.append((int(row[0]), row[1].strip(), nums))
 
     # データ源の異常（取得失敗・大幅減少）で壊れた集計を書き込まないための下限チェック
     if draws < 2000:
         print(f"ERROR: draws={draws} is suspiciously low; aborting without writing.")
         sys.exit(1)
 
+    records.sort(key=lambda r: r[0])
+    last_draw, last_date, _ = records[-1]
+
+    # 直近10回だけの集計（アプリの「直近10回」作戦で使う）
+    recent = records[-RECENT_N:]
+    recent_freq = {str(n): 0 for n in range(1, 44)}
+    for _, _, nums in recent:
+        for n in nums:
+            recent_freq[str(n)] += 1
+
     out = {
         "draws": draws,
         "lastDraw": last_draw,
         "lastDate": last_date,
         "freq": freq,
+        "recentN": len(recent),
+        "recentFreq": recent_freq,
+        "recentFirstDraw": recent[0][0],
+        "recentFirstDate": recent[0][1],
     }
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print(f"OK: {draws} draws, last #{last_draw} ({last_date}) -> {OUT_PATH}")
+    print(f"    recent {len(recent)}: #{recent[0][0]}({recent[0][1]}) - #{last_draw}({last_date})")
 
 
 if __name__ == "__main__":

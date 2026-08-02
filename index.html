@@ -175,6 +175,20 @@
   }
   .mode-btn[aria-pressed="true"] small { color: var(--accent-ink); opacity: .85; }
   .mode-btn:active { transform: scale(.97); }
+  .mode-btn:disabled { opacity: .3; cursor: default; }
+  .mode-btn:disabled:active { transform: none; }
+
+  /* 集計期間の切替（2つ） */
+  .periods { grid-template-columns: repeat(2, 1fr); }
+  .periods .mode-btn { min-height: 62px; }
+
+  .group-label {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin: 0 0 -12px 2px;
+  }
 
   .mode-desc {
     text-align: center;
@@ -410,6 +424,7 @@
     <p class="subtitle">作戦を選んで、番号をつくる</p>
   </header>
 
+  <p class="group-label">作戦</p>
   <div class="modes" role="group" aria-label="作戦の選択">
     <button type="button" class="mode-btn" id="modeFreq" data-mode="freq" aria-pressed="true">
       出やすい<small>よく出た数字</small>
@@ -422,6 +437,17 @@
     </button>
   </div>
   <p class="mode-desc" id="modeDesc"></p>
+
+  <p class="group-label">どこまでの記録で見るか</p>
+  <div class="modes periods" role="group" aria-label="集計期間の選択">
+    <button type="button" class="mode-btn" id="periodAll" data-period="all" aria-pressed="true">
+      全期間<small>第1回から</small>
+    </button>
+    <button type="button" class="mode-btn" id="periodRecent" data-period="recent" aria-pressed="false">
+      直近10回<small>最近の流れ</small>
+    </button>
+  </div>
+  <p class="mode-desc" id="periodDesc"></p>
 
   <div class="stepper" aria-label="枚数の選択">
     <button type="button" id="minus" aria-label="枚数を減らす">−</button>
@@ -444,6 +470,7 @@
       <p><strong>「出やすい」＝これまでよく出た数字で組む。</strong>第1回からの全記録を数えて、出た回数の多い数字（6・37・42・2・21 など）を中心に組み立てます。</p>
       <p><strong>「被りにくい」＝他の人が選ばない数字で組む。</strong>誕生日で使える 1〜31 やラッキーセブンは大人気なので減らし、4・9・42 などの忌み数や 32〜43、連番を多めにします。当たったとき山分けになりにくい組み方です。</p>
       <p><strong>「両取り」＝その二つの良いとこ取り。</strong>よく出ていて、なおかつ他の人が選びにくい数字を優先します。迷ったらこれがおすすめです。</p>
+      <p><strong>「どこまでの記録で見るか」も選べます。</strong>「全期間」は第1回からの全記録、「直近10回」は最近10回だけの記録で数えます。同じ作戦でも、見る範囲を変えると出てくる数字が変わります（「被りにくい」は出現回数を使わないため、この選択は効きません）。</p>
       <p><strong>どの作戦でも全部の口がダブりなし。</strong>1枚目のA口から最後のE口まで、同じ組み合わせは一つもありません。</p>
       <p class="honest">正直な注意：<strong>「出やすい数字」でも次に当たる確率は上がりません。</strong>出た回数の差はサイコロと同じ偶然のゆらぎで、抽選機にクセはないからです。一方「被りにくい」組み方は、当たったときに<strong>他の人と山分けになりにくい＝取り分が増える</strong>という実際の効果があります。だから両方を欲張る「両取り」を用意しました。買いすぎにはご注意を。</p>
     </div>
@@ -452,9 +479,9 @@
   <details>
     <summary>数字ごとの出現回数</summary>
     <div class="explain">
-      <p>第1回（2000年10月）から<strong id="freqUpto">第2,118回（2026年7月9日）</strong>までの本数字を全部数えました。よく出た順に並んでいます。</p>
+      <p id="freqIntro"></p>
       <div id="freqList"></div>
-      <p class="honest">正直な注意：この差は<strong>サイコロのばらつきと同じ「偶然のゆらぎ」</strong>で、どの数字も次に出る確率はまったく同じです。「へえ、こうなってるのか」という観察としてお楽しみください。</p>
+      <p class="honest">正直な注意：この差は<strong>サイコロのばらつきと同じ「偶然のゆらぎ」</strong>で、どの数字も次に出る確率はまったく同じです。実際、第301回以降の全1,824回で「それまで出番が少なかった10個」が次に出た数は平均1.42個、「多かった10個」は1.36個。無関係なら1.40個ですから、<strong>どちらの偏りも確認できません</strong>。観察としてお楽しみください。</p>
     </div>
   </details>
 
@@ -468,15 +495,25 @@
   "use strict";
 
   /* ---- 出現回数データ ----
-     内蔵分は freq.json が読めない環境での予備（第2118回・2026/7/9 時点）。
+     内蔵分は freq.json が読めない環境での予備（第2124回・2026/7/30 時点）。
      freq.json が読めたら差し替わり、以後の生成にも新しい数字が使われる。 */
 
-  var FREQ = {"1":295,"2":315,"3":288,"4":288,"5":303,"6":327,"7":273,"8":296,"9":258,"10":306,"11":282,"12":289,"13":275,"14":285,"15":305,"16":297,"17":274,"18":301,"19":309,"20":295,"21":313,"22":297,"23":293,"24":307,"25":289,"26":309,"27":308,"28":298,"29":278,"30":295,"31":285,"32":297,"33":282,"34":279,"35":308,"36":305,"37":317,"38":311,"39":295,"40":283,"41":278,"42":317,"43":303};
+  // 全期間（第1回〜第2124回）の出現回数
+  var FREQ_ALL = {"1":297,"2":316,"3":290,"4":289,"5":303,"6":328,"7":273,"8":297,"9":258,"10":307,"11":282,"12":290,"13":276,"14":286,"15":307,"16":298,"17":275,"18":303,"19":309,"20":297,"21":314,"22":298,"23":293,"24":307,"25":291,"26":311,"27":308,"28":298,"29":279,"30":296,"31":285,"32":298,"33":282,"34":279,"35":308,"36":306,"37":319,"38":312,"39":295,"40":284,"41":279,"42":317,"43":304};
 
-  // 6個の合計出現回数：大きいほど「これまでよく出た数字」で固めた組み合わせ
+  // 直近10回（第2115〜2124回）の出現回数
+  var FREQ_RECENT = {"1":4,"2":2,"3":3,"4":2,"5":1,"6":2,"7":1,"8":2,"9":0,"10":1,"11":1,"12":1,"13":2,"14":2,"15":2,"16":1,"17":1,"18":2,"19":0,"20":3,"21":1,"22":1,"23":0,"24":0,"25":2,"26":3,"27":1,"28":0,"29":1,"30":1,"31":0,"32":1,"33":0,"34":1,"35":3,"36":2,"37":3,"38":1,"39":0,"40":1,"41":2,"42":2,"43":1};
+
+  var RECENT_LABEL = "直近10回（第2115〜2124回）";
+
+  var period = "all";   // "all"（全期間）／"recent"（直近10回）
+
+  function activeFreq() { return period === "recent" ? FREQ_RECENT : FREQ_ALL; }
+
+  // 6個の合計出現回数：大きいほど「選んだ期間でよく出た数字」で固めた組み合わせ
   function comboFrequency(nums) {
-    var s = 0;
-    for (var i = 0; i < nums.length; i++) s += (FREQ[String(nums[i])] || 0);
+    var f = activeFreq(), s = 0;
+    for (var i = 0; i < nums.length; i++) s += (f[String(nums[i])] || 0);
     return s;
   }
 
@@ -731,14 +768,19 @@
     var parts = currentSheets.map(function (rows, s) {
       return sheetText(rows, s + 1);
     });
-    // どの作戦で作った番号か、貼り付け先でも分かるようにしておく
-    copyText("［" + MODES[mode].chip + "重視］\n\n" + parts.join("\n\n"));
+    // どの作戦・どの期間で作った番号か、貼り付け先でも分かるようにしておく
+    var head = "［" + MODES[mode].chip + "重視";
+    if (mode !== "rare") head += "／" + (period === "recent" ? RECENT_LABEL : "全期間");
+    copyText(head + "］\n\n" + parts.join("\n\n"));
   });
 
-  /* ---- 作戦（モード）切替 ---- */
+  /* ---- 作戦・集計期間の切替 ----
+     どちらも .mode-btn を使うので、属性で選び分ける（混ざらないように） */
 
-  var modeBtns = Array.prototype.slice.call(document.querySelectorAll(".mode-btn"));
+  var modeBtns = Array.prototype.slice.call(document.querySelectorAll("[data-mode]"));
+  var periodBtns = Array.prototype.slice.call(document.querySelectorAll("[data-period]"));
   var modeDesc = document.getElementById("modeDesc");
+  var periodDesc = document.getElementById("periodDesc");
 
   function setMode(next) {
     mode = next;
@@ -746,6 +788,29 @@
       b.setAttribute("aria-pressed", b.getAttribute("data-mode") === mode ? "true" : "false");
     });
     modeDesc.textContent = MODES[mode].desc;
+    syncPeriodUI();
+  }
+
+  function setPeriod(next) {
+    period = next;
+    periodBtns.forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-period") === period ? "true" : "false");
+    });
+    syncPeriodUI();
+    renderFreqList();          // 出現回数の一覧も選んだ期間に合わせる
+  }
+
+  // 「被りにくい」は出現回数を使わないので、期間の選択は効かないことを見て分かるようにする
+  function syncPeriodUI() {
+    var unused = (mode === "rare");
+    periodBtns.forEach(function (b) { b.disabled = unused; });
+    if (unused) {
+      periodDesc.textContent = "この作戦では出現回数を使いません";
+    } else {
+      periodDesc.textContent = period === "recent"
+        ? RECENT_LABEL + "の記録で見ます"
+        : "第1回からの全記録で見ます";
+    }
   }
 
   modeBtns.forEach(function (b) {
@@ -753,6 +818,14 @@
       userActed = true;
       setMode(b.getAttribute("data-mode"));
       render(generate(mai * 5, mode));   // 選んだらすぐ作り直す
+    });
+  });
+
+  periodBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      userActed = true;
+      setPeriod(b.getAttribute("data-period"));
+      render(generate(mai * 5, mode));
     });
   });
 
@@ -783,7 +856,16 @@
 
   /* ---- 出現回数ランキングの表示 ---- */
 
-  function renderFreqList(freqMap) {
+  var ALL_LABEL = "第1回（2000年10月）から第2,124回（2026年7月30日）";
+
+  // 選ばれている期間の回数で一覧を描く（引数なし：常に現在の選択に従う）
+  function renderFreqList() {
+    var intro = document.getElementById("freqIntro");
+    if (intro) {
+      intro.textContent = (period === "recent" ? RECENT_LABEL : ALL_LABEL)
+        + "までの本数字を全部数えました。よく出た順に並んでいます。";
+    }
+    var freqMap = activeFreq();
     var listEl = document.getElementById("freqList");
     if (!listEl) return;
     listEl.innerHTML = "";
@@ -824,7 +906,10 @@
     });
   }
 
-  renderFreqList(FREQ);
+  function jaDate(s) {
+    var p = String(s).split("/");
+    return p.length === 3 ? p[0] + "年" + Number(p[1]) + "月" + Number(p[2]) + "日" : String(s);
+  }
 
   // 同じ場所に置かれた freq.json（自動更新される最新集計）があればそちらを優先
   try {
@@ -832,14 +917,19 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.freq) return;
-        FREQ = d.freq;                 // 以後の番号づくりにも最新の回数を使う
-        renderFreqList(FREQ);
-        var upto = document.getElementById("freqUpto");
-        if (upto && d.lastDraw && d.lastDate) {
-          var p = String(d.lastDate).split("/");
-          var dateJa = p.length === 3 ? p[0] + "年" + Number(p[1]) + "月" + Number(p[2]) + "日" : d.lastDate;
-          upto.textContent = "第" + Number(d.lastDraw).toLocaleString("ja-JP") + "回（" + dateJa + "）";
+        FREQ_ALL = d.freq;             // 以後の番号づくりにも最新の回数を使う
+        if (d.lastDraw && d.lastDate) {
+          ALL_LABEL = "第1回（2000年10月）から第"
+            + Number(d.lastDraw).toLocaleString("ja-JP") + "回（" + jaDate(d.lastDate) + "）";
         }
+        // 直近◯回のデータ（古い freq.json には無いので、あるときだけ差し替える）
+        if (d.recentFreq && d.recentN) {
+          FREQ_RECENT = d.recentFreq;
+          RECENT_LABEL = "直近" + d.recentN + "回（第"
+            + d.recentFirstDraw + "〜" + d.lastDraw + "回）";
+        }
+        renderFreqList();
+        syncPeriodUI();
         // まだ何も操作していないうちだけ、最新データで静かに作り直す
         if (!userActed) render(generate(mai * 5, mode));
       })
@@ -848,6 +938,7 @@
 
   // 初回表示でいきなり出す：説明を読まなくても使い方が伝わる
   setMode(mode);
+  setPeriod(period);
   render(generate(mai * 5, mode));
 })();
 </script>
